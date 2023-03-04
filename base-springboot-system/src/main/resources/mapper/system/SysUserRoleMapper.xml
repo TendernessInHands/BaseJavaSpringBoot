@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mars.system.mapper.SysUserRoleMapper">
+
+	<resultMap type="com.mars.system.domain.SysUserRole" id="SysUserRoleResult">
+		<result property="userId"     column="user_id"      />
+		<result property="roleId"     column="role_id"      />
+	</resultMap>
+
+	<resultMap type="com.mars.common.core.domain.entity.SysRole" id="SysRole">
+		<result property="roleName"     column="role_name"      />
+		<result property="roleId"     column="role_id"      />
+		<result property="roleSort"     column="role_sort"      />
+		<result property="dataScope"     column="data_scope"      />
+		<result property="menuCheckStrictly"     column="menu_check_strictly"      />
+		<result property="deptCheckStrictly"     column="dept_check_strictly"      />
+		<result property="status"     column="status"      />
+		<result property="delFlag"     column="del_flag"      />
+	</resultMap>
+
+	<resultMap type="com.mars.common.core.domain.entity.SysMenu" id="SysMenu">
+		<result property="menuId"     column="menu_id"      />
+		<result property="menuName"     column="menu_name"      />
+		<result property="parentId"     column="parent_id"      />
+		<result property="orderNum"     column="order_num"      />
+		<result property="path"     column="path"      />
+		<result property="status"     column="status"      />
+		<result property="component"     column="component"      />
+		<result property="perms"     column="perms"      />
+		<result property="menuIcon"     column="icon"      />
+	</resultMap>
+
+	<delete id="deleteUserRoleByUserId" parameterType="String">
+		delete from sys_user_role where user_id=#{userId}
+	</delete>
+	
+	<select id="countUserRoleByRoleId" resultType="int">
+	    select count(1) from sys_user_role where role_id=#{roleId}  
+	</select>
+	
+	<delete id="deleteUserRole" parameterType="String">
+ 		delete from sys_user_role where user_id in
+ 		<foreach collection="array" item="userId" open="(" separator="," close=")">
+ 			#{userId}
+        </foreach> 
+ 	</delete>
+	
+	<insert id="batchUserRole">
+		insert into sys_user_role(user_id, role_id) values
+		<foreach item="item" index="index" collection="list" separator=",">
+			(#{item.userId},#{item.roleId})
+		</foreach>
+	</insert>
+	
+	<delete id="deleteUserRoleInfo" parameterType="com.mars.system.domain.SysUserRole">
+		delete from sys_user_role where user_id=#{userId} and role_id=#{roleId}
+	</delete>
+	
+	<delete id="deleteUserRoleInfos">
+	    delete from sys_user_role where role_id=#{roleId} and user_id in
+ 	    <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+ 	        #{userId}
+            </foreach> 
+	</delete>
+
+	<select id="selectUserRole" parameterType="string" resultMap="SysRole">
+	    select *  from sys_role where role_id in (select role_id from sys_user_role where user_id=#{userId})
+	</select>
+
+	<select id="selectRoleMenu" parameterType="string" resultMap="SysMenu">
+         select * from sys_menu  where menu_id in (select menu_id from sys_role_menu where role_id=#{roleId})
+	</select>
+
+	<select id="newSelectRoleParentMenu" parameterType="string" resultMap="SysMenu">
+		SELECT * FROM sys_menu WHERE menu_id IN ( SELECT menu_id FROM sys_role_menu WHERE role_id=#{roleId} ) AND parent_id = '645149495411429376'
+	</select>
+
+	<select id="newSelectRoleSonMenu" parameterType="string" resultMap="SysMenu">
+		SELECT * FROM sys_menu WHERE menu_id IN ( SELECT menu_id FROM sys_role_menu WHERE role_id=#{roleId} ) AND parent_id = #{parentId}
+	</select>
+
+</mapper> 

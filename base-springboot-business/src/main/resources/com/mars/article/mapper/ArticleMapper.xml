@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mars.article.mapper.ArticleMapper">
+    <resultMap id="BaseResultMap" type="com.mars.article.domain.Article">
+        <result column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="status" property="status"/>
+        <result column="org_code" property="orgCode"/>
+        <result column="del_flag" property="delFlag"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_user_name" property="createUserName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_user_name" property="updateUserName"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="del_user_id" property="delUserId"/>
+        <result column="del_user_name" property="delUserName"/>
+        <result column="del_time" property="delTime"/>
+    </resultMap>
+
+
+    <select id="queryList" resultMap="BaseResultMap">
+        SELECT
+            id, title, content, status, org_code, del_flag, create_user_id,
+            create_user_name, create_time, update_user_id, update_user_name,
+            update_time
+        FROM
+            t_article
+        WHERE
+            del_flag = '0'
+        <if test="startTime != null and startTime != ''"> AND DATE_FORMAT(create_time, '%Y-%m-%d') &gt;= #{startTime} </if>
+        <if test="endTime != null and endTime != ''"> AND DATE_FORMAT(create_time, '%Y-%m-%d') &lt;= #{endTime} </if>
+        <if test="orgCode != null and orgCode != ''"> AND org_code = #{orgCode} </if>
+        <if test="status != null and status != ''"> AND status = #{status} </if>
+        <if test="title != null and title != ''"> AND title LIKE concat('%', #{title}, '%') </if>
+        ORDER BY create_time DESC
+    </select>
+</mapper>

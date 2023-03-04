@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<FindBugsFilter>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,DMI_HARDCODED_ABSOLUTE_FILENAME,MS_PKGPROTECT,RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT,NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE,NP_NONNULL_PARAM_VIOLATION,RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE,DE_MIGHT_IGNORE,RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+    </Match>
+    <Match>
+        <Or>
+            <Class name="com.mars.common.utils.file.LocalFileUtils"/>
+            <Class name="com.mars.common.utils.spring.SpringUtils"/>
+            <Class name="com.mars.common.utils.poi.ExcelUtil"/>
+            <Class name="com.mars.common.utils.VerifyCodeUtils"/>
+            <Class name="com.mars.common.utils.file.FileUploadUtils"/>
+            <Package name="~com\.mars\.common.*"/>
+            <Package name="~com\.mars\.framework.*"/>
+        </Or>
+    </Match>
+    <!--<Match>
+        <Package name="~com\.linewell\.irmr\.inspect\.common\.rule.*"/>
+    </Match>-->
+</FindBugsFilter>

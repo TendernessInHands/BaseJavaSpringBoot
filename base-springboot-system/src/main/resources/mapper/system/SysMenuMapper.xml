@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mars.system.mapper.SysMenuMapper">
+
+	<resultMap type="com.mars.common.core.domain.entity.SysMenu" id="SysMenuResult">
+		<id     property="menuId"         column="menu_id"        />
+		<result property="menuName"       column="menu_name"      />
+		<result property="parentName"     column="parent_name"    />
+		<result property="parentId"       column="parent_id"      />
+		<result property="orderNum"       column="order_num"      />
+		<result property="path"           column="path"           />
+		<result property="component"      column="component"      />
+		<result property="isFrame"        column="is_frame"       />
+		<result property="isCache"        column="is_cache"       />
+		<result property="menuType"       column="menu_type"      />
+		<result property="visible"        column="visible"        />
+		<result property="status"         column="status"         />
+		<result property="perms"          column="perms"          />
+		<result property="icon"           column="icon"           />
+		<result property="createBy"       column="create_by"      />
+		<result property="createTime"     column="create_time"    />
+		<result property="updateTime"     column="update_time"    />
+		<result property="updateBy"       column="update_by"      />
+		<result property="remark"         column="remark"         />
+
+		<result property="alwaysShow"         column="always_show"         />
+		<result property="redirect"           column="redirect"         />
+		<result property="breadcrumb"         column="bread_crumb"         />
+		<result property="activeMenu"         column="active_menu"         />
+		<result property="belong"             column="belong"         />
+		<result property="menuIcon"             column="menu_icon"         />
+		<result property="delFlag"             column="del_flag"         />
+	</resultMap>
+
+	<sql id="selectMenuVo">
+        select menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, ifnull(perms,'') as perms, icon, create_time, always_show,
+			   redirect,bread_crumb,active_menu,belong,menu_icon, del_flag
+		from sys_menu
+    </sql>
+    
+    <select id="selectMenuList" parameterType="com.mars.common.core.domain.entity.SysMenu" resultMap="SysMenuResult">
+		<include refid="selectMenuVo"/>
+		<where>
+			<if test="menuName != null and menuName != ''">
+				AND menu_name like concat('%', #{menuName}, '%')
+			</if>
+			<if test="visible != null and visible != ''">
+				AND visible = #{visible}
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			<if test="parentId != null and parentId != ''">
+				AND parent_id = #{parentId}
+			</if>
+			<if test="delFlag != null and delFlag != ''"> AND del_flag = #{delFlag} </if>
+		</where>
+		order by parent_id, order_num
+	</select>
+	
+	<select id="selectMenuTreeAll" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame, m.is_cache, m.menu_type, m.visible,
+						m.status, ifnull(m.perms,'') as perms, m.icon, m.create_time, m.always_show,m.redirect,m.bread_crumb,m.active_menu,m.belong,
+						m.menu_icon, m.del_flag
+		from sys_menu m where m.menu_type in ('M', 'C') and m.status = 0 and m.del_flag = '0'
+		order by m.parent_id, m.order_num
+	</select>
+	
+	<select id="selectMenuListByUserId" parameterType="com.mars.common.core.domain.entity.SysMenu" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name, m.path, m.component, m.visible, m.status, ifnull(m.perms,'') as perms, m.is_frame,
+						m.is_cache, m.menu_type, m.icon, m.order_num, m.create_time, m.menu_icon
+		from sys_menu m
+		left join sys_role_menu rm on m.menu_id = rm.menu_id
+		left join sys_user_role ur on rm.role_id = ur.role_id
+		left join sys_role ro on ur.role_id = ro.role_id
+		where ur.user_id = #{params.userId}
+		<if test="menuName != null and menuName != ''">
+            AND menu_name like concat('%', #{menuName}, '%')
+		</if>
+		<if test="visible != null and visible != ''">
+            AND visible = #{visible}
+		</if>
+		<if test="status != null and status != ''">
+            AND status = #{status}
+		</if>
+		<if test="parentId != null and parentId != ''">
+			AND m.parent_id = #{parentId}
+		</if>
+		order by m.parent_id, m.order_num
+	</select>
+    
+    <select id="selectMenuTreeByUserId" parameterType="string" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame, m.is_cache, m.menu_type, m.visible,
+						m.status, ifnull(m.perms,'') as perms, m.icon, m.create_time, m.always_show,m.redirect,m.bread_crumb,m.active_menu,m.belong,
+						m.menu_icon, m.del_flag
+		from sys_menu m
+			 left join sys_role_menu rm on m.menu_id = rm.menu_id
+			 left join sys_user_role ur on rm.role_id = ur.role_id
+			 left join sys_role ro on ur.role_id = ro.role_id
+			 left join sys_user u on ur.user_id = u.user_id
+		where u.user_id = #{userId} and m.menu_type in ('M', 'C') and m.status = 0  AND ro.status = 0
+		order by m.parent_id, m.order_num
+	</select>
+	
+	<select id="selectMenuListByRoleId" resultType="string">
+		select m.menu_id
+		from sys_menu m
+            left join sys_role_menu rm on m.menu_id = rm.menu_id
+        where rm.role_id = #{roleId}
+            <if test="menuCheckStrictly">
+              and m.menu_id not in (select m.parent_id from sys_menu m inner join sys_role_menu rm on m.menu_id = rm.menu_id and rm.role_id = #{roleId})
+            </if>
+		order by m.parent_id, m.order_num
+	</select>
+	
+	<select id="selectMenuPerms" resultType="String">
+		select distinct m.perms
+		from sys_menu m
+			 left join sys_role_menu rm on m.menu_id = rm.menu_id
+			 left join sys_user_role ur on rm.role_id = ur.role_id
+	</select>
+
+	<select id="selectMenuPermsByUserId" parameterType="String" resultType="String">
+		select m.perms
+		from sys_menu m
+			 left join sys_role_menu rm on m.menu_id = rm.menu_id
+			 left join sys_user_role ur on rm.role_id = ur.role_id
+			 left join sys_role r on r.role_id = ur.role_id
+		where m.status = '0' and r.status = '0' and ur.user_id = #{userId}
+		order by m.order_num asc
+	</select>
+	<select id="selectMenuPermsByUserIdForMobile" parameterType="String" resultType="String">
+		select m.perms
+		from sys_menu m
+		left join sys_role_menu rm on m.menu_id = rm.menu_id
+		left join sys_user_role ur on rm.role_id = ur.role_id
+		left join sys_role r on r.role_id = ur.role_id
+		where m.status = '0' and r.status = '0' and ur.user_id = #{userId} AND m.parent_id = '2041'
+		order by m.order_num asc
+	</select>
+
+	<select id="selectMenuById" parameterType="string" resultMap="SysMenuResult">
+		<include refid="selectMenuVo"/>
+		where menu_id = #{menuId}
+	</select>
+	
+	<select id="hasChildByMenuId" resultType="Integer">
+	    select count(1) from sys_menu where parent_id = #{menuId}  and del_flag = '0'
+	</select>
+	
+	<select id="checkMenuNameUnique" parameterType="com.mars.common.core.domain.entity.SysMenu" resultMap="SysMenuResult">
+		<include refid="selectMenuVo"/>
+		where del_flag = '0' and menu_name=#{menuName} and parent_id = #{parentId} limit 1
+	</select>
+	
+	<update id="updateMenu" parameterType="com.mars.common.core.domain.entity.SysMenu">
+		update sys_menu
+		<set>
+			<if test="menuName != null and menuName != ''">menu_name = #{menuName},</if>
+			<if test="parentId != null">parent_id = #{parentId},</if>
+			order_num = #{orderNum},
+			path = #{path},
+			component = #{component},
+			is_frame = #{isFrame},
+			is_cache = #{isCache},
+			menu_type = #{menuType},
+			visible = #{visible},
+			status = #{status},
+			perms = #{perms},
+			icon = #{icon},
+			remark = #{remark},
+			update_by = #{updateBy},
+			always_show = #{alwaysShow},
+			redirect = #{redirect},
+			bread_crumb = #{breadcrumb},
+			active_menu = #{activeMenu},
+			belong = #{belong},
+			update_by = #{updateBy},
+			update_time = sysdate()
+		</set>
+		where menu_id = #{menuId}
+	</update>
+
+	<insert id="insertMenu" parameterType="com.mars.common.core.domain.entity.SysMenu">
+		insert into sys_menu(
+		<if test="alwaysShow != null">always_show,</if>
+		<if test="redirect != null and redirect != ''">redirect,</if>
+		<if test="breadcrumb != null">bread_crumb,</if>
+		<if test="activeMenu != null and activeMenu != ''">active_menu,</if>
+		<if test="belong != null and belong != ''">belong,</if>
+		<if test="menuId != null and menuId != ''">menu_id,</if>
+		<if test="parentId != null and parentId != 0">parent_id,</if>
+		<if test="menuName != null and menuName != ''">menu_name,</if>
+		<if test="orderNum != null and orderNum != ''">order_num,</if>
+		<if test="path != null and path != ''">path,</if>
+		<if test="component != null and component != ''">component,</if>
+		<if test="isFrame != null and isFrame != ''">is_frame,</if>
+		<if test="isCache != null and isCache != ''">is_cache,</if>
+		<if test="menuType != null and menuType != ''">menu_type,</if>
+		<if test="visible != null">visible,</if>
+		<if test="status != null">status,</if>
+		<if test="perms !=null and perms != ''">perms,</if>
+		<if test="icon != null and icon != ''">icon,</if>
+		<if test="remark != null and remark != ''">remark,</if>
+		<if test="createBy != null and createBy != ''">create_by,</if>
+		<if test="menuIcon != null and menuIcon != ''">menu_icon,</if>
+		<if test="isApp != null and isApp != ''">is_app,</if>
+		<if test="delFlag != null and delFlag != ''">del_flag,</if>
+		create_time
+		)values(
+		<if test="alwaysShow != null">#{alwaysShow},</if>
+		<if test="redirect != null and redirect != ''">#{redirect},</if>
+		<if test="breadcrumb != null">#{breadcrumb},</if>
+		<if test="activeMenu != null and activeMenu != ''">#{activeMenu},</if>
+		<if test="belong != null and belong != ''">#{belong},</if>
+		<if test="menuId != null and menuId != ''">#{menuId},</if>
+		<if test="parentId != null and parentId != 0">#{parentId},</if>
+		<if test="menuName != null and menuName != ''">#{menuName},</if>
+		<if test="orderNum != null and orderNum != ''">#{orderNum},</if>
+		<if test="path != null and path != ''">#{path},</if>
+		<if test="component != null and component != ''">#{component},</if>
+		<if test="isFrame != null and isFrame != ''">#{isFrame},</if>
+		<if test="isCache != null and isCache != ''">#{isCache},</if>
+		<if test="menuType != null and menuType != ''">#{menuType},</if>
+		<if test="visible != null">#{visible},</if>
+		<if test="status != null">#{status},</if>
+		<if test="perms !=null and perms != ''">#{perms},</if>
+		<if test="icon != null and icon != ''">#{icon},</if>
+		<if test="remark != null and remark != ''">#{remark},</if>
+		<if test="createBy != null and createBy != ''">#{createBy},</if>
+		<if test="menuIcon != null and menuIcon != ''">#{menuIcon},</if>
+		<if test="isApp != null and isApp != ''">#{isApp},</if>
+		<if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+		sysdate()
+		)
+	</insert>
+	
+	<delete id="deleteMenuById" parameterType="string">
+	    delete from sys_menu where menu_id = #{menuId}
+	</delete>
+
+	<update id="delMenu" parameterType="com.mars.common.core.domain.entity.SysMenu">
+		update sys_menu
+		<set>
+			<if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
+			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+			<if test="updateTime != null ">update_time = #{updateTime},</if>
+		</set>
+		where menu_id = #{menuId}
+	</update>
+
+	<select id="selectModelMenu" resultMap="SysMenuResult">
+		SELECT
+			*
+		FROM sys_menu
+		WHERE del_flag = '0'
+		AND menu_type = 'K'
+	</select>
+
+	<select id="selectUserAppMenuByUserIdAndParam" resultMap="SysMenuResult">
+		SELECT
+			m.*
+		FROM
+			sys_menu m,
+			sys_role_menu rm
+		WHERE
+			m.menu_id = rm.menu_id
+		AND m.parent_id = '645149495411429376'
+		AND m.del_flag = '0'
+		AND rm.role_id IN ( SELECT ur.role_id FROM sys_user u, sys_user_role ur WHERE u.user_id = ur.user_id AND u.user_id = #{userId} )
+		AND m.menu_name LIKE CONCAT('%', #{param}, '%')
+		ORDER BY m.order_num ASC
+	</select>
+
+	<select id="selectUserAppMenuByUserIdAndMenuId" resultMap="SysMenuResult">
+		SELECT
+			m.*
+		FROM
+			sys_menu m,
+			sys_role_menu rm
+		WHERE
+			m.menu_id = rm.menu_id
+		AND m.del_flag = '0'
+		AND rm.role_id IN ( SELECT ur.role_id FROM sys_user u, sys_user_role ur WHERE u.user_id = ur.user_id AND u.user_id = #{userId} )
+		AND m.menu_id = #{menuId}
+		ORDER BY m.order_num ASC
+	</select>
+
+	<select id="selectSonMenuByUserIdAndParam" resultMap="SysMenuResult">
+		SELECT
+			*
+		FROM
+			sys_menu sm,
+			sys_role_menu srm
+		WHERE
+			sm.menu_id = srm.menu_id
+		AND sm.del_flag = '0'
+		AND srm.role_id IN ( SELECT ur.role_id FROM sys_user u, sys_user_role ur WHERE u.user_id = ur.user_id AND u.user_id = #{userId} )
+		AND sm.menu_name LIKE CONCAT( '%', #{param}, '%' )
+		AND sm.parent_id IN (
+			SELECT
+				m.menu_id
+			FROM
+				sys_menu m,
+				sys_role_menu rm
+			WHERE
+				m.menu_id = rm.menu_id
+			  AND m.parent_id = '645149495411429376'
+			  AND m.del_flag = '0'
+			  AND rm.role_id IN ( SELECT ur.role_id FROM sys_user u, sys_user_role ur WHERE u.user_id = ur.user_id AND u.user_id = #{userId} )
+			ORDER BY
+				m.order_num ASC
+		)
+	</select>
+
+	<select id="selectSonMenuByUserIdAndParamAndParentId" resultMap="SysMenuResult">
+		SELECT
+			*
+		FROM
+			sys_menu sm, sys_role_menu srm
+		WHERE
+			sm.menu_id = srm.menu_id
+		AND sm.del_flag = '0'
+		AND srm.role_id IN ( SELECT ur.role_id FROM sys_user u, sys_user_role ur WHERE u.user_id = ur.user_id AND u.user_id = #{userId} )
+		AND sm.menu_name LIKE CONCAT( '%', #{param}, '%' )
+		AND sm.parent_id  = #{parentId}
+	</select>
+
+</mapper>
